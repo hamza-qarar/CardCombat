@@ -1,3 +1,21 @@
+/* ============================================================
+   Karten-Kampf – Stylesheet
+   ============================================================
+   Aufbau:
+     1. Reset & Body
+     2. Layout-Container
+     3. Überschrift
+     4. Punktestand (.score-board)
+     5. Auswahlknöpfe (.choices, .choice-btn)
+     6. Karten-Komponente (.btn-card, .disp-card, gemeinsame Teile)
+     7. Kampfanzeige (.battle, .choice-display, .face-down-card)
+     8. Ergebnisfeld (.result)
+     9. Animation (@keyframes pop)
+   ============================================================ */
+
+
+/* ── 1. Reset & Body ──────────────────────────────────────── */
+
 * {
     margin: 0;
     padding: 0;
@@ -6,6 +24,7 @@
 
 body {
     font-family: 'Segoe UI', sans-serif;
+    /* Dunkler Blau-Verlauf als Hintergrund */
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     min-height: 100vh;
     display: flex;
@@ -14,23 +33,33 @@ body {
     color: white;
 }
 
+
+/* ── 2. Layout-Container ─────────────────────────────────── */
+
 .container {
     text-align: center;
     padding: 2rem;
-    max-width: 600px;
+    max-width: 650px;
     width: 100%;
 }
+
+
+/* ── 3. Überschrift ──────────────────────────────────────── */
 
 h1 {
     font-size: 2.5rem;
     margin-bottom: 2rem;
     text-transform: uppercase;
     letter-spacing: 3px;
+    /* Farbverlauf-Text: clip-Trick für webkit und Standard */
     background: linear-gradient(90deg, #e94560, #a855f7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+
+/* ── 4. Punktestand ──────────────────────────────────────── */
 
 .score-board {
     display: flex;
@@ -50,6 +79,7 @@ h1 {
     gap: 0.25rem;
 }
 
+/* Kleines Label über der Zahl */
 .score-label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -57,35 +87,40 @@ h1 {
     color: rgba(255, 255, 255, 0.5);
 }
 
+/* Die eigentliche Zahl */
 .score-value {
     font-size: 2rem;
     font-weight: bold;
     color: #e94560;
 }
 
+
+/* ── 5. Auswahlknöpfe ────────────────────────────────────── */
+
 .choices {
     display: flex;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 1rem;
     margin-bottom: 2.5rem;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Umbrich auf kleinen Bildschirmen */
 }
 
 .choice-btn {
     background: rgba(255, 255, 255, 0.07);
     border: 2px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.2rem;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     color: white;
-    min-width: 110px;
+    min-width: 90px;
 }
 
+/* Hover: Button leuchtet rot auf und hebt sich an */
 .choice-btn:hover {
     background: rgba(233, 69, 96, 0.25);
     border-color: #e94560;
@@ -93,20 +128,80 @@ h1 {
     box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
 }
 
+/* Klick: leicht zurückfedern */
 .choice-btn:active {
     transform: translateY(-2px);
 }
 
-.choice-btn .emoji {
-    font-size: 2.5rem;
-}
-
+/* Textlabel unterhalb der Karte */
 .choice-btn .label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
+
+
+/* ── 6. Karten-Komponenten ───────────────────────────────── */
+
+/* Gemeinsame Basis für Button-Karte und Anzeige-Karte */
+.btn-card,
+.disp-card {
+    background: white;
+    border-radius: 6px;
+    border: 1.5px solid #ccc;
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.45);
+    position: relative;          /* Basis für absolute Kinder (.card-corner) */
+    font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* Kartenfarbe: schwarz (Pik, Kreuz) */
+.btn-card.black, .disp-card.black { color: #111; }
+/* Kartenfarbe: rot (Herz, Karo) */
+.btn-card.red,   .disp-card.red   { color: #cc1111; }
+
+/* Größe der kleinen Button-Karte */
+.btn-card  { width: 58px; height: 82px; }
+/* Größe der großen Anzeige-Karte im Kampfbereich */
+.disp-card { width: 72px; height: 100px; }
+
+/* Ecken-Container (oben links / unten rechts) */
+.card-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+/* Oben links */
+.card-corner.tl { top: 4px; left: 5px; }
+/* Unten rechts – 180° Drehung spiegelt Rang und Symbol */
+.card-corner.br { bottom: 4px; right: 5px; transform: rotate(180deg); }
+
+/* Schriftgrößen für Button-Karte */
+.btn-card  .card-corner .rank { font-size: 12px; font-weight: bold; }
+.btn-card  .card-corner .suit { font-size: 10px; }
+
+/* Schriftgrößen für Anzeige-Karte */
+.disp-card .card-corner .rank { font-size: 15px; font-weight: bold; }
+.disp-card .card-corner .suit { font-size: 12px; }
+
+/* Großes Symbol in der Kartenmitte */
+.card-center-suit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Perfekte Zentrierung */
+    line-height: 1;
+}
+
+.btn-card  .card-center-suit       { font-size: 22px; }
+.btn-card  .card-center-suit.large { font-size: 26px; } /* Ass: etwas größer */
+.disp-card .card-center-suit       { font-size: 32px; }
+
+
+/* ── 7. Kampfanzeige ─────────────────────────────────────── */
 
 .battle {
     display: flex;
@@ -125,9 +220,10 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.6rem;
 }
 
+/* Beschriftung "Du" / "Gegner" */
 .side-label {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -135,15 +231,45 @@ h1 {
     color: rgba(255, 255, 255, 0.45);
 }
 
+/* Wrapper für die angezeigte Karte; Mindestgröße = Kartengröße */
 .choice-display {
-    font-size: 3rem;
-    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    min-height: 100px;
 }
 
+/* .pop wird per JS gesetzt, um die Einblend-Animation zu starten */
 .choice-display.pop {
     animation: pop 0.3s ease;
 }
 
+/* Kartenrücken (Startzustand, bevor eine Wahl getroffen wurde) */
+.face-down-card {
+    width: 72px;
+    height: 100px;
+    border-radius: 7px;
+    /* Diagonales Streifenmuster als Kartenrücken */
+    background: repeating-linear-gradient(
+        45deg,
+        #1e3a8a,
+        #1e3a8a 5px,
+        #1a3070 5px,
+        #1a3070 10px
+    );
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: bold;
+    font-family: Georgia, serif;
+}
+
+/* "VS"-Trennzeichen zwischen den beiden Karten */
 .vs {
     font-size: 1.2rem;
     font-weight: bold;
@@ -151,6 +277,10 @@ h1 {
     letter-spacing: 2px;
 }
 
+
+/* ── 8. Ergebnisfeld ─────────────────────────────────────── */
+
+/* Basisstil (neutraler Zustand) */
 .result {
     font-size: 1.3rem;
     font-weight: 600;
@@ -166,24 +296,29 @@ h1 {
     transition: all 0.3s ease;
 }
 
+/* JS setzt className = 'result win|loss|draw' */
 .result.win {
     background: rgba(46, 213, 115, 0.15);
     border-color: rgba(46, 213, 115, 0.4);
-    color: #2ed573;
+    color: #2ed573; /* Grün */
 }
 
 .result.loss {
     background: rgba(233, 69, 96, 0.15);
     border-color: rgba(233, 69, 96, 0.4);
-    color: #e94560;
+    color: #e94560; /* Rot */
 }
 
 .result.draw {
     background: rgba(255, 165, 0, 0.15);
     border-color: rgba(255, 165, 0, 0.4);
-    color: #ffa500;
+    color: #ffa500; /* Orange */
 }
 
+
+/* ── 9. Animation ────────────────────────────────────────── */
+
+/* Karte springt kurz über Originalgröße hinaus und federt zurück */
 @keyframes pop {
     0%   { transform: scale(0.6); }
     60%  { transform: scale(1.2); }

@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schere Stein Papier</title>
+    <title>Karten-Kampf</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Schere Stein Papier</h1>
 
+    <!-- Äußerer Wrapper: zentriert alles, max-width 650px -->
+    <div class="container">
+
+        <h1>Karten-Kampf</h1>
+
+        <!-- ── Punktestand ────────────────────────────────────────
+             Drei Felder: Siege / Unentschieden / Niederlagen.
+             Die <span id="wins|draws|losses"> werden per JS
+             nach jeder Runde mit String(count) befüllt.
+        ──────────────────────────────────────────────────────── -->
         <div class="score-board">
             <div class="score">
                 <span class="score-label">Siege</span>
@@ -25,35 +33,100 @@
             </div>
         </div>
 
+        <!-- ── Auswahlknöpfe ──────────────────────────────────────
+             Jeder Button ruft play('<Kartenname>') auf.
+             Innen steckt eine .btn-card (CSS-Karte mit Ecken
+             und Mittelsymbol) plus ein Label darunter.
+
+             Kartenfarben:
+               .black → ♠ Pik   (König, Bube)
+               .red   → ♥ Herz  (Dame) / ♦ Karo (Ass)
+        ──────────────────────────────────────────────────────── -->
         <div class="choices">
-            <button class="choice-btn" onclick="play('Schere')">
-                <span class="emoji">✂️</span>
-                <span class="label">Schere</span>
+
+            <!-- König – K♠ (schwarz) -->
+            <button class="choice-btn" onclick="play('König')">
+                <div class="btn-card black">
+                    <!-- .tl = top-left Ecke mit Rang + Symbol -->
+                    <div class="card-corner tl"><span class="rank">K</span><span class="suit">♠</span></div>
+                    <!-- Großes Symbol in der Kartenmitte -->
+                    <div class="card-center-suit">♠</div>
+                    <!-- .br = bottom-right Ecke, per CSS um 180° gedreht -->
+                    <div class="card-corner br"><span class="rank">K</span><span class="suit">♠</span></div>
+                </div>
+                <span class="label">König</span>
             </button>
-            <button class="choice-btn" onclick="play('Stein')">
-                <span class="emoji">🪨</span>
-                <span class="label">Stein</span>
+
+            <!-- Dame – Q♥ (rot) -->
+            <button class="choice-btn" onclick="play('Dame')">
+                <div class="btn-card red">
+                    <div class="card-corner tl"><span class="rank">Q</span><span class="suit">♥</span></div>
+                    <div class="card-center-suit">♥</div>
+                    <div class="card-corner br"><span class="rank">Q</span><span class="suit">♥</span></div>
+                </div>
+                <span class="label">Dame</span>
             </button>
-            <button class="choice-btn" onclick="play('Papier')">
-                <span class="emoji">📄</span>
-                <span class="label">Papier</span>
+
+            <!-- Bube – J♣ (schwarz) -->
+            <button class="choice-btn" onclick="play('Bube')">
+                <div class="btn-card black">
+                    <div class="card-corner tl"><span class="rank">J</span><span class="suit">♣</span></div>
+                    <div class="card-center-suit">♣</div>
+                    <div class="card-corner br"><span class="rank">J</span><span class="suit">♣</span></div>
+                </div>
+                <span class="label">Bube</span>
             </button>
+
+            <!-- Ass – A♦ (rot); .large macht das Mittelsymbol etwas größer -->
+            <button class="choice-btn" onclick="play('Ass')">
+                <div class="btn-card red">
+                    <div class="card-corner tl"><span class="rank">A</span><span class="suit">♦</span></div>
+                    <div class="card-center-suit large">♦</div>
+                    <div class="card-corner br"><span class="rank">A</span><span class="suit">♦</span></div>
+                </div>
+                <span class="label">Ass</span>
+            </button>
+
         </div>
 
+        <!-- ── Kampfanzeige ───────────────────────────────────────
+             Zeigt nach einem Klick die gewählten Karten.
+             Startzustand: .face-down-card (blau gemusterter Rücken).
+             Nach play(): JS überschreibt .innerHTML mit makeCardHTML(),
+             was eine .disp-card (aufgedeckte Karte) einfügt.
+             Die .pop-Klasse löst die Einblend-Animation aus.
+        ──────────────────────────────────────────────────────── -->
         <div class="battle" id="battle">
+
             <div class="player-side">
                 <p class="side-label">Du</p>
-                <div class="choice-display" id="playerChoice">❓</div>
+                <!-- Inhalt wird per JS (innerHTML) ersetzt -->
+                <div class="choice-display" id="playerChoice">
+                    <div class="face-down-card">?</div>
+                </div>
             </div>
+
             <div class="vs">VS</div>
+
             <div class="enemy-side">
                 <p class="side-label">Gegner</p>
-                <div class="choice-display" id="enemyChoice">❓</div>
+                <div class="choice-display" id="enemyChoice">
+                    <div class="face-down-card">?</div>
+                </div>
             </div>
+
         </div>
 
+        <!-- ── Ergebnistext ───────────────────────────────────────
+             JS setzt className auf 'result win|loss|draw'
+             (steuert Hintergrundfarbe per CSS) und füllt
+             textContent mit der passenden Meldung.
+        ──────────────────────────────────────────────────────── -->
         <div class="result" id="result">Wähle eine Option!</div>
+
     </div>
+
+    <!-- script.js ist das kompilierte Äquivalent von script.ts -->
     <script src="script.js"></script>
 </body>
 </html>
