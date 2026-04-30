@@ -13,116 +13,210 @@
 
         <h1>Karten-Kampf</h1>
 
-        <!-- ── Punktestand ────────────────────────────────────────
-             Drei Felder: Siege / Unentschieden / Niederlagen.
-             Die <span id="wins|draws|losses"> werden per JS
-             nach jeder Runde mit String(count) befüllt.
-        ──────────────────────────────────────────────────────── -->
-        <div class="score-board">
-            <div class="score">
-                <span class="score-label">Siege</span>
-                <span class="score-value" id="wins">0</span>
+        <!-- ── Statistik-Anzeige (LP & EP) ──────────────────────────
+             Zwei Kämpfer-Spalten (Spieler links, Gegner rechts),
+             getrennt durch ein ⚔️-Symbol in der Mitte.
+             Jede Spalte enthält zwei Balken-Zeilen:
+               LP (Lebenspunkte) – grüner Balken, sinkt bei Niederlagen
+               EP (Energiepunkte) – blauer Balken, sinkt beim Kartenspielen
+             Balken-Technik (schrumpfen ohne Layout-Shift):
+               JS setzt transform:scaleX(anteil) statt width.
+               Spieler-Balken: transform-origin:left  → schrumpft von rechts
+               Gegner-Balken:  transform-origin:right → schrumpft von links
+               Beide Balken entleeren sich damit zur Mitte hin (⚔️).
+             DOM-IDs, die JS beschreibt:
+               playerHpBar / enemyHpBar   – LP-Balken
+               playerEpBar / enemyEpBar   – EP-Balken
+               playerHpNumber / enemyHpNumber – LP-Zahlen
+               playerEpNumber / enemyEpNumber – EP-Zahlen
+        ──────────────────────────────────────────────────────────── -->
+        <div class="hp-board">
+
+            <!-- Spieler-Statistiken (links) -->
+            <div class="combatant-stats player-stats">
+                <span class="combatant-label">Du</span>
+
+                <!-- LP-Zeile: [LP] [Zahl] [Balken→] -->
+                <div class="stat-row">
+                    <span class="stat-tag">LP</span>
+                    <span class="hp-number" id="playerHpNumber">10</span>
+                    <div class="stat-bar-wrap">
+                        <div class="hp-bar player-bar" id="playerHpBar"></div>
+                    </div>
+                </div>
+
+                <!-- EP-Zeile: [EP] [Zahl] [Balken→] -->
+                <div class="stat-row">
+                    <span class="stat-tag ep">EP</span>
+                    <span class="ep-number" id="playerEpNumber">7</span>
+                    <div class="stat-bar-wrap">
+                        <div class="ep-bar player-ep-bar" id="playerEpBar"></div>
+                    </div>
+                </div>
             </div>
-            <div class="score">
-                <span class="score-label">Unentschieden</span>
-                <span class="score-value" id="draws">0</span>
+
+            <!-- Trennzeichen in der Mitte -->
+            <span class="hp-vs">⚔️</span>
+
+            <!-- Gegner-Statistiken (rechts, Zeilen-Reihenfolge gespiegelt) -->
+            <div class="combatant-stats enemy-stats">
+                <span class="combatant-label">Gegner</span>
+
+                <!-- LP-Zeile: [←Balken] [Zahl] [LP] -->
+                <div class="stat-row">
+                    <div class="stat-bar-wrap">
+                        <div class="hp-bar enemy-bar" id="enemyHpBar"></div>
+                    </div>
+                    <span class="hp-number" id="enemyHpNumber">10</span>
+                    <span class="stat-tag">LP</span>
+                </div>
+
+                <!-- EP-Zeile: [←Balken] [Zahl] [EP] -->
+                <div class="stat-row">
+                    <div class="stat-bar-wrap">
+                        <div class="ep-bar enemy-ep-bar" id="enemyEpBar"></div>
+                    </div>
+                    <span class="ep-number" id="enemyEpNumber">7</span>
+                    <span class="stat-tag ep">EP</span>
+                </div>
             </div>
-            <div class="score">
-                <span class="score-label">Niederlagen</span>
-                <span class="score-value" id="losses">0</span>
-            </div>
+
         </div>
 
-        <!-- ── Auswahlknöpfe ──────────────────────────────────────
-             Jeder Button ruft play('<Kartenname>') auf.
-             Innen steckt eine .btn-card (CSS-Karte mit Ecken
-             und Mittelsymbol) plus ein Label darunter.
-
-             Kartenfarben:
-               .black → ♠ Pik   (König, Bube)
-               .red   → ♥ Herz  (Dame) / ♦ Karo (Ass)
-        ──────────────────────────────────────────────────────── -->
+        <!-- ── Auswahlknöpfe ──────────────────────────────────────────
+             Aufbau von links nach rechts:
+               [Passen] | [Trenner] | [König] [Dame] [Bube] [Ass]
+             EP-Kosten der Karten:
+               König: 3 EP · Dame: 2 EP · Bube: 1 EP · Ass: 1–4 EP (zufällig)
+             Passen kostet keine EP, lädt aber +5 EP auf (bis MAX_EP).
+             Schaden-Regel beim Passen:
+               Gegner spielt eine Karte → Spieler nimmt 1 LP Schaden
+               Gegner passt ebenfalls   → kein Schaden für beide
+             Wenn der Spieler für eine Karte zu wenig EP hat,
+             wird deren Button per JS auf disabled gesetzt und
+             visuell ausgegraut (.choice-btn:disabled in CSS).
+             Sind alle Karten-Buttons deaktiviert, erhält der
+             Passen-Button die Klasse .forced und leuchtet auf.
+             DOM-IDs: passBtn, btnKoenig, btnDame, btnBube, btnAss
+        ──────────────────────────────────────────────────────────── -->
         <div class="choices">
 
-            <!-- König – K♠ (schwarz) -->
-            <button class="choice-btn" onclick="play('König')">
+            <!-- Passen-Button (links vom Trenner) -->
+            <button class="choice-btn pass-btn" id="passBtn" onclick="pass()">
+                <span class="pass-icon">🛡️</span>
+                <span class="label">Passen</span>
+                <span class="ep-cost">⚡ +5</span>
+            </button>
+
+            <!-- Visueller Trenner zwischen Pass und Karten -->
+            <div class="choices-sep"></div>
+
+            <!-- König – K♠ (schwarz) – kostet 3 EP -->
+            <button class="choice-btn" id="btnKoenig" onclick="play('König')">
                 <div class="btn-card black">
-                    <!-- .tl = top-left Ecke mit Rang + Symbol -->
-                    <div class="card-corner tl"><span class="rank">K</span><span class="suit">♠</span></div>
-                    <!-- Großes Symbol in der Kartenmitte -->
-                    <div class="card-center-suit">♠</div>
-                    <!-- .br = bottom-right Ecke, per CSS um 180° gedreht -->
-                    <div class="card-corner br"><span class="rank">K</span><span class="suit">♠</span></div>
+                    <div class="card-corner tl"><span class="rank">K</span><!-- <span class="suit">👑</span>--></div>
+                    <div class="card-center-suit">👑</div>
+                    <div class="card-corner br"><span class="rank">K</span><!-- <span class="suit">👑</span>--></div>
                 </div>
                 <span class="label">König</span>
+                <span class="ep-cost">⚡ 3</span>
             </button>
 
-            <!-- Dame – Q♥ (rot) -->
-            <button class="choice-btn" onclick="play('Dame')">
+            <!-- Dame – Q♥ (rot) – kostet 2 EP -->
+            <button class="choice-btn" id="btnDame" onclick="play('Dame')">
                 <div class="btn-card red">
-                    <div class="card-corner tl"><span class="rank">Q</span><span class="suit">♥</span></div>
-                    <div class="card-center-suit">♥</div>
-                    <div class="card-corner br"><span class="rank">Q</span><span class="suit">♥</span></div>
+                    <div class="card-corner tl"><span class="rank">Q</span><!-- <span class="suit">🌹</span>--></div>
+                    <div class="card-center-suit">🌹</div>
+                    <div class="card-corner br"><span class="rank">Q</span><!-- <span class="suit">🌹</span>--></div>
                 </div>
                 <span class="label">Dame</span>
+                <span class="ep-cost">⚡ 2</span>
             </button>
 
-            <!-- Bube – J♣ (schwarz) -->
-            <button class="choice-btn" onclick="play('Bube')">
+            <!-- Bube – J♣ (schwarz) – kostet 1 EP -->
+            <button class="choice-btn" id="btnBube" onclick="play('Bube')">
                 <div class="btn-card black">
-                    <div class="card-corner tl"><span class="rank">J</span><span class="suit">♣</span></div>
-                    <div class="card-center-suit">♣</div>
-                    <div class="card-corner br"><span class="rank">J</span><span class="suit">♣</span></div>
+                    <div class="card-corner tl"><span class="rank">J</span><!-- <span class="suit">🗡️</span>--></div>
+                    <div class="card-center-suit">🗡️</div>
+                    <div class="card-corner br"><span class="rank">J</span><!-- <span class="suit">🗡️</span>--></div>
                 </div>
                 <span class="label">Bube</span>
+                <span class="ep-cost">⚡ 1</span>
             </button>
 
-            <!-- Ass – A♦ (rot); .large macht das Mittelsymbol etwas größer -->
-            <button class="choice-btn" onclick="play('Ass')">
+            <!-- Ass – A♦ (rot) – kostet 1–4 EP (zufällig beim Ausspielen) -->
+            <button class="choice-btn" id="btnAss" onclick="play('Ass')">
                 <div class="btn-card red">
-                    <div class="card-corner tl"><span class="rank">A</span><span class="suit">♦</span></div>
-                    <div class="card-center-suit large">♦</div>
-                    <div class="card-corner br"><span class="rank">A</span><span class="suit">♦</span></div>
+                    <div class="card-corner tl"><span class="rank">A</span><!-- <span class="suit">♠</span>--></div>
+                    <div class="card-center-suit large">♠</div>
+                    <div class="card-corner br"><span class="rank">A</span><!-- <span class="suit">♠</span>--></div>
                 </div>
                 <span class="label">Ass</span>
+                <span class="ep-cost">⚡ 1–3</span>
+            </button>
+
+            <!-- ── Joker-Bereich (standardmäßig versteckt) ──────────────────
+                 Erscheint nach jeder Runde mit 12 % Wahrscheinlichkeit (JOKER_CHANCE).
+                 JS blendet Trenner und Button gemeinsam ein/aus.
+                 Joker kostet 5 EP und schlägt alle anderen Karten.
+            ──────────────────────────────────────────────────────────────── -->
+
+            <!-- Trenner vor dem Joker (sichtbar nur wenn Joker erscheint) -->
+            <div class="choices-sep" id="jokerSep" style="display:none"></div>
+
+            <!-- Joker – JK★ (gold) – kostet 5 EP – schlägt alle Karten -->
+            <button class="choice-btn joker-btn" id="btnJoker" onclick="play('Joker')" style="display:none">
+                <div class="btn-card joker">
+                    <div class="card-corner tl"><span class="rank">JK</span><!-- <span class="suit">👅</span>--></div>
+                    <div class="card-center-suit">👅</div>
+                    <div class="card-corner br"><span class="rank">JK</span><!-- <span class="suit">👅</span>--></div>
+                </div>
+                <span class="label">Joker</span>
+                <span class="ep-cost">⚡ 4</span>
             </button>
 
         </div>
 
         <!-- ── Kampfanzeige ───────────────────────────────────────
-             Zeigt nach einem Klick die gewählten Karten.
              Startzustand: .face-down-card (blau gemusterter Rücken).
-             Nach play(): JS überschreibt .innerHTML mit makeCardHTML(),
-             was eine .disp-card (aufgedeckte Karte) einfügt.
-             Die .pop-Klasse löst die Einblend-Animation aus.
+             Nach play(): JS schreibt makeCardHTML()  → .disp-card
+             Nach pass(): JS schreibt makePassCardHTML() → .pass-card
+             .pop-Klasse löst die Einblend-Animation aus.
         ──────────────────────────────────────────────────────── -->
-        <div class="battle" id="battle">
-
+        <div class="battle">
             <div class="player-side">
                 <p class="side-label">Du</p>
-                <!-- Inhalt wird per JS (innerHTML) ersetzt -->
                 <div class="choice-display" id="playerChoice">
                     <div class="face-down-card">?</div>
                 </div>
             </div>
-
             <div class="vs">VS</div>
-
             <div class="enemy-side">
                 <p class="side-label">Gegner</p>
                 <div class="choice-display" id="enemyChoice">
                     <div class="face-down-card">?</div>
                 </div>
             </div>
-
         </div>
 
         <!-- ── Ergebnistext ───────────────────────────────────────
-             JS setzt className auf 'result win|loss|draw'
-             (steuert Hintergrundfarbe per CSS) und füllt
-             textContent mit der passenden Meldung.
+             JS setzt className auf 'result win|loss|draw' und
+             füllt textContent mit der Rundenmeldung.
         ──────────────────────────────────────────────────────── -->
         <div class="result" id="result">Wähle eine Option!</div>
+
+        <!-- ── Game-Over-Overlay ──────────────────────────────────
+             Standardmäßig unsichtbar (opacity:0, pointer-events:none).
+             JS fügt .visible hinzu, sobald ein Spieler 0 LP erreicht.
+             restart() entfernt .visible und setzt alles zurück.
+        ──────────────────────────────────────────────────────── -->
+        <div class="game-over-overlay" id="gameOverOverlay">
+            <div class="game-over-box">
+                <!-- Titel: "Sieg! 🏆" oder "Niederlage! 💀" – per JS gesetzt -->
+                <h2 class="game-over-title" id="gameOverTitle"></h2>
+                <button class="restart-btn" onclick="restart()">↺ Neu starten</button>
+            </div>
+        </div>
 
     </div>
 

@@ -2,15 +2,16 @@
    Karten-Kampf – Stylesheet
    ============================================================
    Aufbau:
-     1. Reset & Body
-     2. Layout-Container
-     3. Überschrift
-     4. Punktestand (.score-board)
-     5. Auswahlknöpfe (.choices, .choice-btn)
-     6. Karten-Komponente (.btn-card, .disp-card, gemeinsame Teile)
-     7. Kampfanzeige (.battle, .choice-display, .face-down-card)
-     8. Ergebnisfeld (.result)
-     9. Animation (@keyframes pop)
+     1.  Reset & Body
+     2.  Layout-Container
+     3.  Überschrift
+     4.  Statistik-Anzeige – LP & EP (.hp-board)
+     5.  Auswahlknöpfe (.choices, .choice-btn)
+     6.  Karten-Komponente (.btn-card, .disp-card)
+     7.  Kampfanzeige (.battle, .choice-display, .face-down-card, .pass-card)
+     8.  Ergebnisfeld (.result)
+     9.  Game-Over-Overlay (.game-over-overlay)
+    10.  Animationen (@keyframes)
    ============================================================ */
 
 
@@ -24,7 +25,6 @@
 
 body {
     font-family: 'Segoe UI', sans-serif;
-    /* Dunkler Blau-Verlauf als Hintergrund */
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     min-height: 100vh;
     display: flex;
@@ -51,7 +51,6 @@ h1 {
     margin-bottom: 2rem;
     text-transform: uppercase;
     letter-spacing: 3px;
-    /* Farbverlauf-Text: clip-Trick für webkit und Standard */
     background: linear-gradient(90deg, #e94560, #a855f7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -59,39 +58,130 @@ h1 {
 }
 
 
-/* ── 4. Punktestand ──────────────────────────────────────── */
+/* ── 4. Statistik-Anzeige – LP & EP ─────────────────────── */
 
-.score-board {
+/* Äußerer Rahmen: zwei Kämpfer-Spalten + ⚔️ in der Mitte */
+.hp-board {
     display: flex;
-    justify-content: center;
-    gap: 2rem;
+    align-items: center;
+    gap: 1rem;
     margin-bottom: 2.5rem;
     background: rgba(255, 255, 255, 0.05);
-    padding: 1rem 2rem;
+    padding: 0.9rem 1.25rem;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.score {
+/* Eine Kämpfer-Spalte (Spieler oder Gegner): Name oben, zwei Balken-Zeilen */
+.combatant-stats {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
+    gap: 0.45rem;
 }
+/* Spieler: Inhalt linksbündig */
+.player-stats { align-items: flex-start; }
+/* Gegner: Inhalt rechtsbündig (Balken-Reihenfolge im HTML bereits gespiegelt) */
+.enemy-stats  { align-items: flex-end; }
 
-/* Kleines Label über der Zahl */
-.score-label {
-    font-size: 0.7rem;
+/* Name über den Balken ("Du" / "Gegner") */
+.combatant-label {
+    font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 0.1rem;
 }
 
-/* Die eigentliche Zahl */
-.score-value {
-    font-size: 2rem;
+/* Eine Balken-Zeile: [Tag] [Zahl] [Balken] (Spieler)
+                  oder [Balken] [Zahl] [Tag] (Gegner, Reihenfolge im HTML) */
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%; /* Zeile füllt die volle Breite der Kämpfer-Spalte */
+}
+
+/* Kleines Typ-Label links/rechts neben der Zahl ("LP" / "EP") */
+.stat-tag {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.3);
+    min-width: 1.4rem;
+    text-align: center;
+}
+/* EP-Tag leicht blau tönen, um LP und EP visuell zu unterscheiden */
+.stat-tag.ep { color: rgba(100, 160, 255, 0.5); }
+
+/* ── LP-Zahlen ── */
+.hp-number {
+    font-size: 1.3rem;
     font-weight: bold;
-    color: #e94560;
+    line-height: 1;
+    min-width: 1.6rem;
+    text-align: center;
+    color: #2ed573;             /* grün = volle Gesundheit */
+    transition: color 0.3s ease;
+}
+.hp-number.warn     { color: #ffa500; } /* orange: LP < 5  */
+.hp-number.critical { color: #e94560; } /* rot:    LP ≤ 2  */
+
+/* ── EP-Zahlen ── */
+.ep-number {
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
+    min-width: 1.4rem;
+    text-align: center;
+    color: #60a5fa;             /* blau = ausreichend Energie */
+    transition: color 0.3s ease;
+}
+.ep-number.warn     { color: #f59e0b; } /* amber: EP ≤ 3  */
+.ep-number.critical { color: #e94560; } /* rot:   EP = 1  */
+.ep-number.empty    { color: #4b5563; } /* grau:  EP = 0  */
+
+/* ── Balken-Hülle (gemeinsam für LP und EP) ── */
+.stat-bar-wrap {
+    flex: 1;                    /* nimmt den verbleibenden Platz in .stat-row */
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1); /* graue Schiene als Hintergrund */
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* ── Gemeinsame Balkenbasis ── */
+/* width bleibt immer 100%; die Größe wird über transform:scaleX() gesteuert,
+   damit CSS-Transitions flüssig laufen ohne Layout-Reflow. */
+.hp-bar,
+.ep-bar {
+    height: 100%;
+    width: 100%;
+    border-radius: 4px;
+    transition: transform 0.4s ease, background 0.3s ease;
+}
+
+/* Schrumpf-Richtung: Spieler von rechts, Gegner von links
+   → beide Balken entleeren sich zur Mitte (⚔️) hin */
+.player-bar,
+.player-ep-bar { transform-origin: left center; }
+
+.enemy-bar,
+.enemy-ep-bar  { transform-origin: right center; }
+
+/* ── LP-Balken-Farben ── */
+.hp-bar          { background: linear-gradient(90deg, #2ed573, #17c964); }
+.hp-bar.critical { background: linear-gradient(90deg, #e94560, #c0392b); } /* rot bei ≤ 3 LP */
+
+/* ── EP-Balken-Farben ── */
+.ep-bar          { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.ep-bar.low      { background: linear-gradient(90deg, #f59e0b, #fbbf24); } /* amber bei ≤ 3 EP */
+.ep-bar.empty    { background: linear-gradient(90deg, #374151, #4b5563); } /* grau bei 0 EP */
+
+/* ⚔️-Trennzeichen in der Mitte */
+.hp-vs {
+    font-size: 1.1rem;
+    flex-shrink: 0; /* darf sich nicht verkleinern */
 }
 
 
@@ -100,11 +190,13 @@ h1 {
 .choices {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 1rem;
     margin-bottom: 2.5rem;
-    flex-wrap: wrap; /* Umbrich auf kleinen Bildschirmen */
+    flex-wrap: nowrap;
 }
 
+/* Gemeinsamer Stil für alle Buttons (Pass + Karten) */
 .choice-btn {
     background: rgba(255, 255, 255, 0.07);
     border: 2px solid rgba(255, 255, 255, 0.12);
@@ -115,12 +207,11 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.4rem;
     color: white;
-    min-width: 90px;
+    min-width: 85px;
 }
 
-/* Hover: Button leuchtet rot auf und hebt sich an */
 .choice-btn:hover {
     background: rgba(233, 69, 96, 0.25);
     border-color: #e94560;
@@ -128,12 +219,11 @@ h1 {
     box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
 }
 
-/* Klick: leicht zurückfedern */
 .choice-btn:active {
     transform: translateY(-2px);
 }
 
-/* Textlabel unterhalb der Karte */
+/* Karten-/Button-Textlabel */
 .choice-btn .label {
     font-size: 0.8rem;
     font-weight: 600;
@@ -141,31 +231,103 @@ h1 {
     text-transform: uppercase;
 }
 
+/* EP-Kosten-Badge unter dem Label */
+.ep-cost {
+    font-size: 0.65rem;
+    color: #60a5fa; /* blau wie EP-Zahl */
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+}
+
+/* Deaktivierter Karten-Button (zu wenig EP) */
+.choice-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none; /* verhindert Hover-Effekt */
+}
+
+/* ── Passen-Button ── */
+.pass-btn {
+    min-width: 75px;
+    border-style: dashed;           /* gestrichelt = "keine Aktion" */
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.pass-btn .pass-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.pass-btn:hover {
+    background: rgba(168, 85, 247, 0.25); /* lila statt rot */
+    border-color: #a855f7;
+    border-style: solid;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
+}
+
+/* Erzwungenes Passen: alle Karten-Buttons deaktiviert →
+   Passen-Button leuchtet auf, um dem Spieler zu signalisieren */
+.pass-btn.forced {
+    border-style: solid;
+    border-color: #a855f7;
+    background: rgba(168, 85, 247, 0.15);
+    animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* ── Joker-Button ── */
+/* Goldener Rahmen; erscheint mit joker-appear-Animation (ausgelöst durch display-Wechsel) */
+.joker-btn {
+    border-color: rgba(255, 215, 0, 0.55);
+    animation: joker-appear 0.45s ease;
+}
+
+.joker-btn:hover {
+    background: rgba(255, 200, 0, 0.2);
+    border-color: #ffd700;
+    box-shadow: 0 10px 30px rgba(255, 200, 0, 0.45);
+    transform: translateY(-5px);
+}
+
+/* Visueller Trenner zwischen Passen-Button und Karten-Buttons */
+.choices-sep {
+    width: 1px;
+    align-self: stretch;          /* Höhe = Höhe der Flex-Zeile */
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0.4rem 0;
+    flex-shrink: 0;
+}
+
 
 /* ── 6. Karten-Komponenten ───────────────────────────────── */
 
-/* Gemeinsame Basis für Button-Karte und Anzeige-Karte */
+/* Gemeinsame Basis für Button-Karte (.btn-card) und Anzeige-Karte (.disp-card) */
 .btn-card,
 .disp-card {
     background: white;
     border-radius: 6px;
     border: 1.5px solid #ccc;
     box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.45);
-    position: relative;          /* Basis für absolute Kinder (.card-corner) */
+    position: relative;           /* Basis für absolute Kinder (.card-corner) */
     font-family: Georgia, 'Times New Roman', serif;
 }
 
-/* Kartenfarbe: schwarz (Pik, Kreuz) */
 .btn-card.black, .disp-card.black { color: #111; }
-/* Kartenfarbe: rot (Herz, Karo) */
 .btn-card.red,   .disp-card.red   { color: #cc1111; }
 
-/* Größe der kleinen Button-Karte */
+/* Joker-Karte: gold-oranger Verlauf, dunkler Text */
+.btn-card.joker,
+.disp-card.joker {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 60%, #ff4500 100%);
+    color: #1a0800;
+    border-color: #e6a800;
+}
+
+/* Button-Karte (klein, in den Auswahlknöpfen) */
 .btn-card  { width: 58px; height: 82px; }
-/* Größe der großen Anzeige-Karte im Kampfbereich */
+/* Anzeige-Karte (groß, im Kampfbereich) */
 .disp-card { width: 72px; height: 100px; }
 
-/* Ecken-Container (oben links / unten rechts) */
+/* Ecken-Container: absolut positioniert oben links / unten rechts */
 .card-corner {
     position: absolute;
     display: flex;
@@ -173,17 +335,12 @@ h1 {
     align-items: center;
     line-height: 1.1;
 }
-
-/* Oben links */
 .card-corner.tl { top: 4px; left: 5px; }
-/* Unten rechts – 180° Drehung spiegelt Rang und Symbol */
+/* 180°-Drehung spiegelt Rang + Symbol für die untere rechte Ecke */
 .card-corner.br { bottom: 4px; right: 5px; transform: rotate(180deg); }
 
-/* Schriftgrößen für Button-Karte */
 .btn-card  .card-corner .rank { font-size: 12px; font-weight: bold; }
 .btn-card  .card-corner .suit { font-size: 10px; }
-
-/* Schriftgrößen für Anzeige-Karte */
 .disp-card .card-corner .rank { font-size: 15px; font-weight: bold; }
 .disp-card .card-corner .suit { font-size: 12px; }
 
@@ -223,7 +380,6 @@ h1 {
     gap: 0.6rem;
 }
 
-/* Beschriftung "Du" / "Gegner" */
 .side-label {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -231,7 +387,7 @@ h1 {
     color: rgba(255, 255, 255, 0.45);
 }
 
-/* Wrapper für die angezeigte Karte; Mindestgröße = Kartengröße */
+/* Wrapper, der Karte, Kartenrücken oder Pass-Symbol aufnimmt */
 .choice-display {
     display: flex;
     align-items: center;
@@ -240,23 +396,20 @@ h1 {
     min-height: 100px;
 }
 
-/* .pop wird per JS gesetzt, um die Einblend-Animation zu starten */
+/* .pop wird per JS gesetzt → Einblend-Animation startet neu */
 .choice-display.pop {
     animation: pop 0.3s ease;
 }
 
-/* Kartenrücken (Startzustand, bevor eine Wahl getroffen wurde) */
+/* Kartenrücken: Startzustand und nach restart() */
 .face-down-card {
     width: 72px;
     height: 100px;
     border-radius: 7px;
-    /* Diagonales Streifenmuster als Kartenrücken */
     background: repeating-linear-gradient(
         45deg,
-        #1e3a8a,
-        #1e3a8a 5px,
-        #1a3070 5px,
-        #1a3070 10px
+        #1e3a8a, #1e3a8a 5px,
+        #1a3070 5px, #1a3070 10px
     );
     border: 2px solid rgba(255, 255, 255, 0.2);
     box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.5);
@@ -269,7 +422,21 @@ h1 {
     font-family: Georgia, serif;
 }
 
-/* "VS"-Trennzeichen zwischen den beiden Karten */
+/* Pass-Symbol: erscheint wenn Spieler oder Gegner passt */
+.pass-card {
+    width: 72px;
+    height: 100px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* "VS"-Trennzeichen */
 .vs {
     font-size: 1.2rem;
     font-weight: bold;
@@ -280,7 +447,7 @@ h1 {
 
 /* ── 8. Ergebnisfeld ─────────────────────────────────────── */
 
-/* Basisstil (neutraler Zustand) */
+/* Neutraler Basisstil */
 .result {
     font-size: 1.3rem;
     font-weight: 600;
@@ -297,30 +464,98 @@ h1 {
 }
 
 /* JS setzt className = 'result win|loss|draw' */
-.result.win {
-    background: rgba(46, 213, 115, 0.15);
-    border-color: rgba(46, 213, 115, 0.4);
-    color: #2ed573; /* Grün */
+.result.win  { background: rgba( 46, 213, 115, 0.15); border-color: rgba( 46, 213, 115, 0.4); color: #2ed573; }
+.result.loss { background: rgba(233,  69,  96, 0.15); border-color: rgba(233,  69,  96, 0.4); color: #e94560; }
+.result.draw { background: rgba(255, 165,   0, 0.15); border-color: rgba(255, 165,   0, 0.4); color: #ffa500; }
+
+
+/* ── 9. Game-Over-Overlay ────────────────────────────────── */
+
+/* Überdeckt den Viewport; standardmäßig unsichtbar und nicht klickbar.
+   JS fügt .visible hinzu, sobald ein Spieler 0 LP erreicht. */
+.game-over-overlay {
+    position: fixed;
+    inset: 0;                       /* top/right/bottom/left = 0 */
+    background: rgba(0, 0, 0, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;           /* unsichtbar → nicht klickbar */
+    transition: opacity 0.4s ease;
+    z-index: 100;
 }
 
-.result.loss {
-    background: rgba(233, 69, 96, 0.15);
-    border-color: rgba(233, 69, 96, 0.4);
-    color: #e94560; /* Rot */
+.game-over-overlay.visible {
+    opacity: 1;
+    pointer-events: all;            /* sichtbar → klickbar */
 }
 
-.result.draw {
-    background: rgba(255, 165, 0, 0.15);
-    border-color: rgba(255, 165, 0, 0.4);
-    color: #ffa500; /* Orange */
+/* Inhalt-Box in der Mitte */
+.game-over-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2.5rem 3rem;
+    background: rgba(15, 20, 50, 0.95);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
+.game-over-overlay.visible .game-over-box {
+    animation: slideUp 0.4s ease;  /* Box fährt von unten herein */
+}
 
-/* ── 9. Animation ────────────────────────────────────────── */
+/* Titel "Sieg! 🏆" oder "Niederlage! 💀" – Farbe per JS-Klasse */
+.game-over-title         { font-size: 2.2rem; font-weight: bold; letter-spacing: 2px; }
+.game-over-title.win     { color: #2ed573; }
+.game-over-title.loss    { color: #e94560; }
+
+/* "Neu starten"-Button */
+.restart-btn {
+    background: linear-gradient(135deg, #e94560, #a855f7);
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+}
+
+.restart-btn:hover  { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(233, 69, 96, 0.5); }
+.restart-btn:active { transform: translateY(-1px); }
+
+
+/* ── 10. Animationen ─────────────────────────────────────── */
 
 /* Karte springt kurz über Originalgröße hinaus und federt zurück */
 @keyframes pop {
     0%   { transform: scale(0.6); }
     60%  { transform: scale(1.2); }
     100% { transform: scale(1);   }
+}
+
+/* Game-Over-Box fährt von unten herein */
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Passen-Button pulsiert, wenn alle Karten-Buttons deaktiviert sind */
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+    50%       { box-shadow: 0 0 22px rgba(168, 85, 247, 0.65); }
+}
+
+/* Joker-Button springt beim Erscheinen herein (wird durch display:none→'' ausgelöst) */
+@keyframes joker-appear {
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    65%  { transform: scale(1.18) rotate(4deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg);   opacity: 1; }
 }
