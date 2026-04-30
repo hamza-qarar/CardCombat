@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schere Stein Papier</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Schere Stein Papier</h1>
+
+        <div class="score-board">
+            <div class="score">
+                <span class="score-label">Siege</span>
+                <span class="score-value" id="wins">0</span>
+            </div>
+            <div class="score">
+                <span class="score-label">Unentschieden</span>
+                <span class="score-value" id="draws">0</span>
+            </div>
+            <div class="score">
+                <span class="score-label">Niederlagen</span>
+                <span class="score-value" id="losses">0</span>
+            </div>
+        </div>
+
+        <div class="choices">
+            <button class="choice-btn" onclick="play('Schere')">
+                <span class="emoji">✂️</span>
+                <span class="label">Schere</span>
+            </button>
+            <button class="choice-btn" onclick="play('Stein')">
+                <span class="emoji">🪨</span>
+                <span class="label">Stein</span>
+            </button>
+            <button class="choice-btn" onclick="play('Papier')">
+                <span class="emoji">📄</span>
+                <span class="label">Papier</span>
+            </button>
+        </div>
+
+        <div class="battle" id="battle">
+            <div class="player-side">
+                <p class="side-label">Du</p>
+                <div class="choice-display" id="playerChoice">❓</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="enemy-side">
+                <p class="side-label">Gegner</p>
+                <div class="choice-display" id="enemyChoice">❓</div>
+            </div>
+        </div>
+
+        <div class="result" id="result">Wähle eine Option!</div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
