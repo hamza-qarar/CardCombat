@@ -11,7 +11,7 @@
 //   Bube   schlägt  Ass            – verliert gegen König und Dame
 //   Ass    schlägt  König          – verliert gegen Bube
 //   Dame ↔ Ass: keiner gewinnt → Unentschieden
-//   Joker  schlägt  jede andere Karte (außer gegen sich selbst)
+//   Joker  schlägt  jede andere Karte
 //
 // Joker-System:
 //   Nach jeder Runde erscheint der Joker-Button mit einer Wahrscheinlichkeit
@@ -163,7 +163,7 @@ function getEnemyChoice(): Choice | null {
 //   ┌─────────────────┐
 //   │ K               │   ← .card-corner.tl (oben links)
 //   │                 │
-//   │       👑        │   ← .card-center-suit (Mitte)
+//   │       👑       │   ← .card-center-suit (Mitte)
 //   │                 │
 //   │               K │   ← .card-corner.br (unten rechts, per CSS gedreht)
 //   └─────────────────┘

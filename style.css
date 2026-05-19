@@ -533,6 +533,7 @@ h1 {
 
 
 /* ── 10. Animationen ─────────────────────────────────────── */
+/*      (Abschnitt 11 – Mobilgeräte – folgt nach den Animationen) */
 
 /* Karte springt kurz über Originalgröße hinaus und federt zurück */
 @keyframes pop {
@@ -558,4 +559,119 @@ h1 {
     0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
     65%  { transform: scale(1.18) rotate(4deg); opacity: 1; }
     100% { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
+
+
+/* ── 11. Mobilgeräte ─────────────────────────────────────── */
+
+/* Kompakteres Layout für Smartphones (≤ 520 px Breite) */
+@media (max-width: 520px) {
+
+    /* Body scrollbar erlauben, falls der Inhalt höher als der Viewport ist */
+    body {
+        align-items: flex-start;
+        min-height: 100dvh; /* dvh berücksichtigt die Browser-Chrome-Leiste auf Mobilgeräten */
+    }
+
+    /* Weniger Außenabstand links/rechts */
+    .container {
+        padding: 1rem 0.85rem;
+    }
+
+    /* Kleinere, kompaktere Überschrift */
+    h1 {
+        font-size: 1.7rem;
+        margin-bottom: 1.2rem;
+        letter-spacing: 1px;
+    }
+
+    /* LP/EP-Bereich: etwas weniger Abstand */
+    .hp-board {
+        gap: 0.6rem;
+        padding: 0.7rem 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Buttons dürfen auf mehrere Zeilen umbrechen */
+    .choices {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Vertikale Trennlinien verstecken – bei Zeilenumbruch machen sie keinen Sinn mehr.
+       !important überschreibt auch das JS-gesteuerte style.display beim Joker-Trenner. */
+    .choices-sep {
+        display: none !important;
+    }
+
+    /* Buttons etwas schmaler und weniger innenabstand */
+    .choice-btn {
+        min-width: 62px;
+        padding: 0.65rem 0.5rem;
+    }
+
+    /* Button-Karte (in den Auswahlknöpfen) verkleinern */
+    .btn-card {
+        width: 46px;
+        height: 65px;
+    }
+
+    /* Schriftgrößen innerhalb der verkleinerten Button-Karte anpassen */
+    .btn-card .card-corner .rank    { font-size: 10px; }
+    .btn-card .card-center-suit     { font-size: 18px; }
+    .btn-card .card-center-suit.large { font-size: 21px; }
+
+    /* Kampfbereich: weniger Abstand zwischen den Seiten */
+    .battle {
+        gap: 1.2rem;
+        padding: 1.1rem 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Ergebnistext etwas kleiner */
+    .result {
+        font-size: 1rem;
+        padding: 0.8rem 1rem;
+    }
+
+    /* Game-Over-Box: weniger Innenabstand, damit sie auf kleinen Screens nicht überläuft */
+    .game-over-box {
+        padding: 2rem 1.5rem;
+        width: calc(100% - 2rem); /* verhindert seitliches Überlaufen */
+    }
+
+    .game-over-title { font-size: 1.8rem; }
+}
+
+/* Touch-Geräte: Hover-Effekte deaktivieren.
+   Auf Touchscreens gibt es keinen echten Hover – der Browser "klebt" den
+   Hover-Zustand nach dem Tippen, was zu unerwünschten Farbumschlägen führt. */
+@media (hover: none) {
+
+    .choice-btn:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.12);
+        transform: none;
+        box-shadow: none;
+    }
+
+    .pass-btn:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.15);
+        border-style: dashed;
+        box-shadow: none;
+    }
+
+    .joker-btn:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 215, 0, 0.55);
+        transform: none;
+        box-shadow: none;
+    }
+
+    .restart-btn:hover {
+        transform: none;
+        box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+    }
 }
